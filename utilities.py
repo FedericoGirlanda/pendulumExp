@@ -1090,3 +1090,8 @@ def getEllipseContour(S,rho,xg):
         xBar = sample_from_ellipsoid(S,rho,r_i = 0.99)
         c = np.vstack((c,xBar+xg))
     return c
+
+def get_params(params_path):
+    with open(params_path, 'r') as fle:
+        params = yaml.safe_load(fle)
+    return params
