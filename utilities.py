@@ -755,6 +755,11 @@ class TVLQRController(AbstractController):
         des_tau = (uu - KK.dot(xdiff) - kk)[0][0]
         des_tau = np.clip(des_tau, -self.torque_limit, self.torque_limit)
 
+        # since this is a pure torque controller,
+        # set des_pos and des_pos to None
+        des_pos = None
+        des_vel = None
+
         return des_pos, des_vel, des_tau
 
     def set_Qf(self, Qf):
