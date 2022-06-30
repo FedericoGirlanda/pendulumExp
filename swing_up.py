@@ -10,15 +10,14 @@ import matplotlib.pyplot as plt
 motor_id = 0x08
 can_port = 'can0'
 
-WORK_DIR = ""
+WORK_DIR = Path(Path(os.path.abspath(__file__)).parents[0])
 print("Workspace is set to:", WORK_DIR)
-
 
 """
     RoA verification
 """
 name = "RoA verification"
-folder_name = "roaVerification"
+folder_name = "meaningless_trials" #"roaVerification"
 attribute = "motorfft"
 
 
@@ -49,9 +48,9 @@ start, end, meas_dt, data_dict = motor_control_loop.ak80_6(control_method,
                                                            motor_id, can_port)
 
 # save measurements
-# TIMESTAMP = datetime.now().strftime("%Y%m%d-%I%M%S-%p")
-# output_folder = str(WORK_DIR) + f'/results/{TIMESTAMP}_' + folder_name
-# process_data.save(output_folder, data_dict)
+TIMESTAMP = datetime.now().strftime("%Y%m%d-%I%M%S-%p")
+output_folder = str(WORK_DIR) + f'/results/{TIMESTAMP}_' + folder_name
+process_data.save(output_folder, data_dict)
 
 # plot data
 print("Making data plots.")
@@ -72,19 +71,18 @@ plt.ylabel("Position (rad)")
 plt.title("Position (rad) vs Time (s)")
 plt.legend(['position_measured', 'position_desired'])
 plt.draw()
-# plt.savefig(output_folder + '/swingup_pos.pdf')
+plt.savefig(output_folder + '/swingup_pos.pdf')
 plt.show()
 
 plt.figure()
 plt.plot(meas_time, meas_vel)
-# plt.plot(meas_time, meas_vel_filt)
 plt.plot(des_time, des_vel)
 plt.xlabel("Time (s)")
 plt.ylabel("Velocity (rad/s)")
 plt.legend(['velocity_measured', 'velocity_desired'])
 plt.title("Velocity (rad/s) vs Time (s)")
 plt.draw()
-# plt.savefig(output_folder + '/swingup_vel.pdf')
+plt.savefig(output_folder + '/swingup_vel.pdf')
 plt.show()
 
 plt.figure()
@@ -95,5 +93,5 @@ plt.ylabel("Torque (Nm)")
 plt.title("Torque (Nm) vs Time (s)")
 plt.legend(['Measured Torque', 'Desired Torque'])
 plt.draw()
-# plt.savefig(output_folder + '/swingup_tau.pdf')
+plt.savefig(output_folder + '/swingup_tau.pdf')
 plt.show()
