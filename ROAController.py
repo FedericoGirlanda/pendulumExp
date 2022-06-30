@@ -3,14 +3,14 @@ import numpy as np
 
 class RoAController(AbstractController):
 
-    def __init__(self,data_dict, mass=1.0, length=0.5, damping=0.1,
-    gravity=9.81, torque_limit=np.inf, x_i = [0.0, 0.1]):
+    def __init__(self, traj_dict, params, x_i = [0.0, 0.1]):
 
         ## LQR controller initialization for reaching the initial state
-        self.lqr = LQRController(mass=mass,
-        length=length,
-        damping=damping,
-        gravity=gravity)
+        self.x_i = x_i
+        self.lqr = LQRController(mass= params['mass'],
+                                length=params['length'], damping=params['damping'],
+                                gravity=params['gravity'], torque_limit=params['torque_limit'])
+        self.lqr.set_clip()
         self.lqr.set_goal(x_i) 
 
         # seconds to wait after reaching the initial condition
@@ -18,9 +18,9 @@ class RoAController(AbstractController):
         self.change_time = 0
 
         ## TVLQR controller initialization for swing-up
-        self.tvlqr = TVLQRController(data_dict=data_dict, mass=mass, length=length,
-        damping=damping, gravity=gravity,
-        torque_limit=torque_limit)
+        self.tvlqr = TVLQRController(data_dict=traj_dict,mass= params['mass'],
+                                    length=params['length'], damping=params['damping'],
+                                    gravity=params['gravity'],torque_limit=params['torque_limit_control'])
         self.tvlqr.set_goal([np.pi, 0.0])
 
         self.active_controller = "lqr"

@@ -489,7 +489,6 @@ class LQRController(AbstractController):
                  gravity=9.81, torque_limit=np.inf):
         """
         Controller which stabilizes the pendulum at its instable fixpoint.
-
         Parameters
         ----------
         mass : float, default=1.0
@@ -503,7 +502,8 @@ class LQRController(AbstractController):
         torque_limit : float, default=np.inf
             the torque_limit of the pendulum actuator
         """
-        self.goal = [np.pi,0]
+
+        self.goal = [np.pi, 0.0]
 
         self.m = mass
         self.len = length
@@ -531,7 +531,6 @@ class LQRController(AbstractController):
                            meas_tau=0, meas_time=0):
         """
         The function to compute the control input for the pendulum actuator
-
         Parameters
         ----------
         meas_pos : float
@@ -544,7 +543,6 @@ class LQRController(AbstractController):
         meas_time : float, default=0
             the collapsed time [s]
             (not used)
-
         Returns
         -------
         des_pos : float
@@ -560,8 +558,9 @@ class LQRController(AbstractController):
         pos = float(np.squeeze(meas_pos))
         vel = float(np.squeeze(meas_vel))
 
-        th = pos + self.goal[0]
-        th = (th + self.goal[0]) % (2*self.goal[0]) - self.goal[0]
+        #th = pos + np.pi
+        #th = (th + np.pi) % (2*np.pi) - np.pi
+        th = pos - self.goal[0]
 
         y = np.asarray([th, vel])
 
@@ -618,8 +617,6 @@ class TVLQRController(AbstractController):
         torque_limit : float, default=np.inf
             the torque_limit of the pendulum actuator
         """
-
-        self.Qf = np.array([None]) # Useful only for RoA purposes
 
         # load the trajectory
         self.traj_time = data_dict["des_time_list"]
@@ -685,10 +682,7 @@ class TVLQRController(AbstractController):
                                           self.Q_tilqr,
                                           self.R_tilqr)
 
-        if (not self.Qf.all() == None):
-            self.options.Qf = self.Qf # Useful only for RoA purposes
-        else:
-            self.options.Qf = S  
+        self.options.Qf = S  
         
         self.tvlqr = FiniteHorizonLinearQuadraticRegulator(
                         self.plant,
@@ -757,25 +751,7 @@ class TVLQRController(AbstractController):
         des_tau = (uu - KK.dot(xdiff) - kk)[0][0]
         des_tau = np.clip(des_tau, -self.torque_limit, self.torque_limit)
 
-        # since this is a pure torque controller,
-        # set des_pos and des_pos to None
-        des_pos = None
-        des_vel = None
-
         return des_pos, des_vel, des_tau
-
-    def set_Qf(self, Qf):
-        """
-        This function is useful only for RoA purposes. Used to set the
-        final S-matrix of the tvlqr controller.
-
-        Parameters
-        ----------
-        Qf : matrix
-            the S-matrix from time-invariant RoA estimation around the 
-            up-right position.
-        """
-        self.Qf = Qf
 
 def prepare_trajectory(csv_path):
     """

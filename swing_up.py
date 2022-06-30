@@ -34,10 +34,7 @@ traj_dict = process_data.prepare_trajectory(csv_path)
 
 ## Going to the initial position and then activating the tvlqr
 # TODO: now x_i has velocity zero but it should be random
-control_method = RoAController(traj_dict, mass=params['mass'], length=params['length'],
-                            damping=params['damping'], gravity=params['gravity'],
-                            torque_limit=params['torque_limit_control'], x_i= x0)
-#control_method.set_goal([np.pi, 0.0])  # final point must be stable point
+control_method = RoAController(traj_dict, params, x_i= x0)
                     
 data_dict = process_data.prepare_empty(params)
 
