@@ -1,6 +1,6 @@
 gravity: 9.81
 length: 0.4 #0.5
-torque_limit: 1.5
+torque_limit: 5
 torque_limit_control: 1.5
 mass:  0.57288 #0.6755
 inertia: None #0.139625  

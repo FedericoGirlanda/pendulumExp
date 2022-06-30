@@ -503,6 +503,8 @@ class LQRController(AbstractController):
         torque_limit : float, default=np.inf
             the torque_limit of the pendulum actuator
         """
+        self.goal = [np.pi,0]
+
         self.m = mass
         self.len = length
         self.b = damping
@@ -520,7 +522,7 @@ class LQRController(AbstractController):
         self.clip_out = False
 
     def set_goal(self, x):
-        pass
+        self.goal = x
 
     def set_clip(self):
         self.clip_out = True
@@ -558,8 +560,8 @@ class LQRController(AbstractController):
         pos = float(np.squeeze(meas_pos))
         vel = float(np.squeeze(meas_vel))
 
-        th = pos + np.pi
-        th = (th + np.pi) % (2*np.pi) - np.pi
+        th = pos + self.goal[0]
+        th = (th + self.goal[0]) % (2*self.goal[0]) - self.goal[0]
 
         y = np.asarray([th, vel])
 
@@ -576,8 +578,8 @@ class LQRController(AbstractController):
 
         # since this is a pure torque controller,
         # set des_pos and des_pos to None
-        des_pos = None
-        des_vel = None
+        des_pos = self.goal[0]
+        des_vel = self.goal[1]
 
         return des_pos, des_vel, u
 
