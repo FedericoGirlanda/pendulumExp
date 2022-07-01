@@ -4,7 +4,10 @@ from utilities import get_params
 from pathlib import Path
 from datetime import datetime
 import os
+import numpy as np
 import matplotlib.pyplot as plt
+from plots import plotFunnel3d_fromCsv
+from utilities import prepare_trajectory
 
 # set motor parameters
 motor_id = 0x08
@@ -69,7 +72,6 @@ plt.title("Position (rad) vs Time (s)")
 plt.legend(['position_measured', 'position_desired'])
 plt.draw()
 plt.savefig(output_folder + '/swingup_pos.pdf')
-plt.show()
 
 plt.figure()
 plt.plot(meas_time, meas_vel)
@@ -80,7 +82,6 @@ plt.legend(['velocity_measured', 'velocity_desired'])
 plt.title("Velocity (rad/s) vs Time (s)")
 plt.draw()
 plt.savefig(output_folder + '/swingup_vel.pdf')
-plt.show()
 
 plt.figure()
 plt.plot(meas_time, meas_tau)
@@ -91,4 +92,20 @@ plt.title("Torque (Nm) vs Time (s)")
 plt.legend(['Measured Torque', 'Desired Torque'])
 plt.draw()
 plt.savefig(output_folder + '/swingup_tau.pdf')
+plt.show()
+
+# load results of simulation and compare with real behaviour
+csv_path = "log_data/direct_collocation/trajectory.csv"
+funnels_csv_path = "log_data/funnel/funnel.csv"
+data_dict = prepare_trajectory(csv_path)
+trajectory = np.loadtxt(csv_path, skiprows=1, delimiter=",")
+time = trajectory.T[0].T
+x0_traj = [trajectory.T[1].T, trajectory.T[2].T]
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.plot(time, x0_traj[0], x0_traj[1])
+ax.plot(meas_time, meas_pos, meas_vel) # TODO: a shift in time is needed
+plotFunnel3d_fromCsv(funnels_csv_path,x0_traj,time, ax)
+plt.savefig(output_folder + '/swingup_funnel.pdf')
 plt.show()
