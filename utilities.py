@@ -308,7 +308,7 @@ class DirectCollocationCalculator():
         dircol = DirectCollocation(self.pendulum_plant,
                                    self.pendulum_context,
                                    num_time_samples=N,
-                                   minimum_timestep=0.05,
+                                   minimum_timestep=0.001,
                                    maximum_timestep=max_dt)
 
         dircol.AddEqualTimeIntervalsConstraints()

@@ -20,7 +20,7 @@ print("Workspace is set to:", WORK_DIR)
     RoA verification
 """
 name = "RoA verification"
-folder_name = "meaningless_trials" #"roaVerification"
+folder_name = "meaningless" #"0initNoisySucc" 
 attribute = "motorfft"
 
 
@@ -31,13 +31,13 @@ params = get_params(params_path)
 data_dict = process_data.prepare_empty(params)
 
 # initial condition and trajectory from funnelComputation
-x0 = [0.5,  0.  ]
+x0 = [0.,  0.  ]
 csv_path = "log_data/direct_collocation/trajectory.csv"
 traj_dict = process_data.prepare_trajectory(csv_path)
 
 ## Going to the initial position and then activating the tvlqr
 # TODO: now x_i has velocity zero but it should be random
-control_method = RoAController(traj_dict, params, x_i= x0)
+control_method = RoAController(traj_dict, params, x_i= x0, disturbance=True)
                     
 data_dict = process_data.prepare_empty(params)
 
@@ -49,7 +49,7 @@ start, end, meas_dt, data_dict = motor_control_loop.ak80_6(control_method,
 
 # save measurements
 TIMESTAMP = datetime.now().strftime("%Y%m%d-%I%M%S-%p")
-output_folder = str(WORK_DIR) + f'/results/{TIMESTAMP}_' + folder_name
+output_folder = str(WORK_DIR) + '/results/'+ folder_name + f'{TIMESTAMP}_'
 process_data.save(output_folder, data_dict)
 
 # plot data
@@ -105,7 +105,11 @@ x0_traj = [trajectory.T[1].T, trajectory.T[2].T]
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 ax.plot(time, x0_traj[0], x0_traj[1])
-ax.plot(meas_time, meas_pos, meas_vel) # TODO: a shift in time is needed
+indeces = np.where(meas_time >= control_method.tvlqrTime)[0]
+meas_time = meas_time[indeces] - control_method.tvlqrTime*np.ones(len(meas_time[indeces]))
+meas_pos = meas_pos[indeces]
+meas_vel = meas_vel[indeces]
+ax.plot(meas_time, meas_pos, meas_vel) 
 plotFunnel3d_fromCsv(funnels_csv_path,x0_traj,time, ax)
 plt.savefig(output_folder + '/swingup_funnel.pdf')
 plt.show()
