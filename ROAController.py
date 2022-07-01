@@ -59,6 +59,7 @@ class RoAController(AbstractController):
                 self.active_controller = "tvlqr"
                 self.tvlqrTime = meas_time
         if self.active_controller == "tvlqr":
+            self.tvlqr.tvlqrTime = self.tvlqrTime
             des_pos, des_vel, u = self.tvlqr.get_control_output(meas_pos, meas_vel, meas_tau, meas_time)
             print(f"tvlqr action at time {meas_time} with input u = {meas_tau} and state x = [{meas_pos, meas_vel}]")
 

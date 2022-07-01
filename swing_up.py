@@ -20,7 +20,7 @@ print("Workspace is set to:", WORK_DIR)
     RoA verification
 """
 name = "RoA verification"
-folder_name = "meaningless" #"0initNoisySucc" 
+folder_name = "16initManualFail" #"meaningless" 
 attribute = "motorfft"
 
 
@@ -31,13 +31,13 @@ params = get_params(params_path)
 data_dict = process_data.prepare_empty(params)
 
 # initial condition and trajectory from funnelComputation
-x0 = [0.,  0.  ]
+x0 = [1.6,  0.  ]
 csv_path = "log_data/direct_collocation/trajectory.csv"
 traj_dict = process_data.prepare_trajectory(csv_path)
 
 ## Going to the initial position and then activating the tvlqr
 # TODO: now x_i has velocity zero but it should be random
-control_method = RoAController(traj_dict, params, x_i= x0, disturbance=True)
+control_method = RoAController(traj_dict, params, x_i= x0, disturbance=False)
                     
 data_dict = process_data.prepare_empty(params)
 

@@ -632,6 +632,7 @@ class TVLQRController(AbstractController):
         torque_limit : float, default=np.inf
             the torque_limit of the pendulum actuator
         """
+        self.tvlqrTime = 0
 
         # load the trajectory
         self.traj_time = data_dict["des_time_list"]
@@ -752,7 +753,7 @@ class TVLQRController(AbstractController):
 
         self.counter += 1
 
-        time = min(meas_time, self.max_time)
+        time = meas_time - self.tvlqrTime
 
         uu = self.tvlqr.u0.value(time)
         xx = self.tvlqr.x0.value(time)
