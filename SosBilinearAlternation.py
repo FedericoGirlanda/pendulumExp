@@ -26,10 +26,10 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
     prog.AddConstraint(rho_i >= 0)
 
     # Dynamics definition
-    u0 = controller.tvlqr.u0.value(t_i)[0]
+    u0 = controller.tvlqr.u0.value(t_i)[0][0]
     K_i = controller.tvlqr.K.value(t_i)[0]
     ubar = - K_i.dot(xbar)
-    u = (u0 + ubar)[0] #input
+    u = (u0 + ubar) #input
 
     x0 = controller.tvlqr.x0.value(t_i)
     x = (xbar + x0)[0]
@@ -47,22 +47,21 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
     Vdot_i = Vdot_i_x + Vdot_i_t
 
     # Boundaries due to the saturation 
-    u_minus = - torque_limit
-    u_plus = torque_limit
+    u_minus = - torque_limit -u0
+    u_plus = torque_limit -u0
     fn_minus = [xbar[1], (u_minus -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)]
     Vdot_minus = Vdot_i_t + V_i.Jacobian(xbar).dot(fn_minus)
     fn_plus = [xbar[1], (u_plus -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)]
     Vdot_plus = Vdot_i_t + V_i.Jacobian(xbar).dot(fn_plus)
 
     # Multipliers definition
-    lambda_1 = prog.NewSosPolynomial(Variables(xbar), 4)[0]
-    h = lambda_1
-    lambda_1 = lambda_1.ToExpression()
+    lambda_1 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
     lambda_2 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
     lambda_3 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
     lambda_4 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
 
     # Retriving the mu result 
+    h = prog.NewFreePolynomial(Variables(xbar), 4)
     ordered_basis = list(h.monomial_to_coefficient_map().keys())
     zip_iterator = zip(ordered_basis, list(h_map.values()))
     h_dict = dict(zip_iterator)
@@ -71,17 +70,15 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
     mu_ij = h.ToExpression()
 
     # Optimization constraints 
-    eps = 0.001
-    constr_minus = eps - (Vdot_minus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) 
-    constr = eps - (Vdot_i) + rho_dot_i + mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) 
-    constr_plus = eps - (Vdot_plus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) 
+    constr_minus = - (Vdot_minus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) 
+    constr = - (Vdot_i) + rho_dot_i + mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) 
+    constr_plus = - (Vdot_plus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) 
 
     for c in [constr_minus, constr, constr_plus]:
         prog.AddSosConstraint(c)
 
     # Solve the problem
     result = Solve(prog)
-
     rho_opt = result.GetSolution(rho_i)
 
     # failing checker
@@ -113,10 +110,10 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     prog.AddConstraint(gamma <= 0)
 
     # Dynamics definition
-    u0 = controller.tvlqr.u0.value(t_i)[0]
+    u0 = controller.tvlqr.u0.value(t_i)[0][0]
     K_i = controller.tvlqr.K.value(t_i)[0]
     ubar = - K_i.dot(xbar)
-    u = (u0 + ubar)[0] #input
+    u = (u0 + ubar) #input
 
     x0 = controller.tvlqr.x0.value(t_i)
     x = (xbar + x0)[0]
@@ -134,15 +131,15 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     Vdot_i = Vdot_i_x + Vdot_i_t
 
     # Boundaries due to the saturation 
-    u_minus = - torque_limit
-    u_plus = torque_limit
+    u_minus = - torque_limit -u0
+    u_plus = torque_limit -u0
     fn_minus = [xbar[1], (u_minus -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)]
     Vdot_minus = Vdot_i_t + V_i.Jacobian(xbar).dot(fn_minus)
     fn_plus = [xbar[1], (u_plus -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)]
     Vdot_plus = Vdot_i_t + V_i.Jacobian(xbar).dot(fn_plus)
 
     # Multipliers definition
-    h = prog.NewFreePolynomial(Variables(xbar), 4)
+    h = prog.NewSosPolynomial(Variables(xbar), 4)[0]
     mu_ij = h.ToExpression()
     lambda_1 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
     lambda_2 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
@@ -171,11 +168,11 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     # failing checker
     fail = not result_mult.is_success()
     if fail:
-        print(f"mult step Error, gamma is: {eps}")  
+        print(f"mult step Error, decreasing rho to make it feasible...")  
 
-    # go ahead if right enouf, step back?
-    if (round(eps*10e-5) == 0):
-        fail = False
-
+    # go ahead if right enough, step back?
+    if eps < np.inf:
+        if (round(eps*10e-4) == 0):
+            fail = False
 
     return fail, h_map

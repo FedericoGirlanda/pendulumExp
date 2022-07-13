@@ -7,7 +7,7 @@ class RoAController(AbstractController):
 
         # Adding a random disturbance
         self.noisy = disturbance
-        self.noisyTime = 1
+        self.noisyTime = 2.5
         self.noiseDuration = 0.2
         self.noiseAmplitude = 3
 
@@ -30,7 +30,7 @@ class RoAController(AbstractController):
                                     gravity=params['gravity'],torque_limit=params['torque_limit_control'])
         self.tvlqr.set_goal([np.pi, 0.0])
 
-        self.active_controller = "manualInit"
+        self.active_controller = "tvlqr"
 
     def get_control_output(self, meas_pos, meas_vel,
         meas_tau=0, meas_time=0):               
