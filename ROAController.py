@@ -3,13 +3,13 @@ import numpy as np
 
 class RoAController(AbstractController):
 
-    def __init__(self, traj_dict, params, x_i = [0.0, 0.1], disturbance = True):
+    def __init__(self, traj_dict, params, x_i = [0.0, 0.1], disturbance = True, noiseAmplitude = 0):
 
         # Adding a random disturbance
         self.noisy = disturbance
-        self.noisyTime = 1
+        self.noisyTime = 2.2
         self.noiseDuration = 0.2
-        self.noiseAmplitude = 3
+        self.noiseAmplitude = noiseAmplitude
 
         ## LQR controller initialization for reaching the initial state
         self.x_i = x_i
@@ -30,7 +30,7 @@ class RoAController(AbstractController):
                                     gravity=params['gravity'],torque_limit=params['torque_limit_control'])
         self.tvlqr.set_goal([np.pi, 0.0])
 
-        self.active_controller = "manualInit"
+        self.active_controller = "tvlqr"
 
     def get_control_output(self, meas_pos, meas_vel,
         meas_tau=0, meas_time=0):               

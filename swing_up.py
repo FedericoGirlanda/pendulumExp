@@ -1,3 +1,4 @@
+from inspect import signature
 from ROAController import RoAController
 import process_data, motor_control_loop
 from utilities import get_params
@@ -9,8 +10,19 @@ import matplotlib.pyplot as plt
 from plots import plotFunnel3d_fromCsv
 from utilities import prepare_trajectory
 
+# experiment decision
+#1 Successful swingup
+dist = False
+noiseA = 0
+#2 little noise
+# dist = True
+# noiseA = 1.5
+#1 big noise
+# dist = True
+# noiseA = 3
+
 # set motor parameters
-motor_id = 0x08
+motor_id = 0x04
 can_port = 'can0'
 
 WORK_DIR = Path(Path(os.path.abspath(__file__)).parents[0])
@@ -20,7 +32,7 @@ print("Workspace is set to:", WORK_DIR)
     RoA verification
 """
 name = "RoA verification"
-folder_name = "16initManualFail" #"meaningless" 
+folder_name = "SUtrials" #"16initManualFail" 
 attribute = "motorfft"
 
 
@@ -37,7 +49,7 @@ traj_dict = process_data.prepare_trajectory(csv_path)
 
 ## Going to the initial position and then activating the tvlqr
 # TODO: now x_i has velocity zero but it should be random
-control_method = RoAController(traj_dict, params, x_i= x0, disturbance=False)
+control_method = RoAController(traj_dict, params, x_i= x0, disturbance=dist, noiseAmplitude=noiseA)
                     
 data_dict = process_data.prepare_empty(params)
 
@@ -63,25 +75,25 @@ meas_pos = data_dict["meas_pos_list"]
 meas_vel = data_dict["meas_vel_list"]
 meas_tau = data_dict["meas_tau_list"]
 
-plt.figure()
-plt.plot(meas_time, meas_pos)
-plt.plot(des_time, des_pos)
-plt.xlabel("Time (s)")
-plt.ylabel("Position (rad)")
-plt.title("Position (rad) vs Time (s)")
-plt.legend(['position_measured', 'position_desired'])
-plt.draw()
-plt.savefig(output_folder + '/swingup_pos.pdf')
+# plt.figure()
+# plt.plot(meas_time, meas_pos)
+# plt.plot(des_time, des_pos)
+# plt.xlabel("Time (s)")
+# plt.ylabel("Position (rad)")
+# plt.title("Position (rad) vs Time (s)")
+# plt.legend(['position_measured', 'position_desired'])
+# plt.draw()
+# plt.savefig(output_folder + '/swingup_pos.pdf')
 
-plt.figure()
-plt.plot(meas_time, meas_vel)
-plt.plot(des_time, des_vel)
-plt.xlabel("Time (s)")
-plt.ylabel("Velocity (rad/s)")
-plt.legend(['velocity_measured', 'velocity_desired'])
-plt.title("Velocity (rad/s) vs Time (s)")
-plt.draw()
-plt.savefig(output_folder + '/swingup_vel.pdf')
+# plt.figure()
+# plt.plot(meas_time, meas_vel)
+# plt.plot(des_time, des_vel)
+# plt.xlabel("Time (s)")
+# plt.ylabel("Velocity (rad/s)")
+# plt.legend(['velocity_measured', 'velocity_desired'])
+# plt.title("Velocity (rad/s) vs Time (s)")
+# plt.draw()
+# plt.savefig(output_folder + '/swingup_vel.pdf')
 
 plt.figure()
 plt.plot(meas_time, meas_tau)
