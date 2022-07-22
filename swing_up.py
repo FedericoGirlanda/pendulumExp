@@ -1,7 +1,7 @@
 from inspect import signature
 from ROAController import RoAController
 import process_data, motor_control_loop
-from utilities import get_params
+from utilities import get_params, LQRController
 from pathlib import Path
 from datetime import datetime
 import os
@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 from plots import plotFunnel3d_fromCsv
 from utilities import prepare_trajectory
 
-# experiment decision
-#1 Successful swingup
+# Noise decision
+#1 No noise
 dist = False
 noiseA = 0
 #2 little noise
 # dist = True
-# noiseA = 1.5
+# noiseA = 2
 #1 big noise
 # dist = True
 # noiseA = 3
@@ -43,13 +43,18 @@ params = get_params(params_path)
 data_dict = process_data.prepare_empty(params)
 
 # initial condition and trajectory from funnelComputation
-x0 = [1.6,  0.  ]
+x0 = [2,  0. ]
 csv_path = "log_data/direct_collocation/trajectory.csv"
 traj_dict = process_data.prepare_trajectory(csv_path)
 
 ## Going to the initial position and then activating the tvlqr
 # TODO: now x_i has velocity zero but it should be random
 control_method = RoAController(traj_dict, params, x_i= x0, disturbance=dist, noiseAmplitude=noiseA)
+# control_method = LQRController(mass= params['mass'],
+#                                 length=params['length'], damping=params['damping'],
+#                                 gravity=params['gravity'], torque_limit=params['torque_limit'])
+# control_method.set_clip()
+# control_method.set_goal(x0) 
                     
 data_dict = process_data.prepare_empty(params)
 
@@ -95,16 +100,16 @@ meas_tau = data_dict["meas_tau_list"]
 # plt.draw()
 # plt.savefig(output_folder + '/swingup_vel.pdf')
 
-plt.figure()
-plt.plot(meas_time, meas_tau)
-plt.plot(des_time, des_tau)
-plt.xlabel("Time (s)")
-plt.ylabel("Torque (Nm)")
-plt.title("Torque (Nm) vs Time (s)")
-plt.legend(['Measured Torque', 'Desired Torque'])
-plt.draw()
-plt.savefig(output_folder + '/swingup_tau.pdf')
-plt.show()
+# plt.figure()
+# plt.plot(meas_time, meas_tau)
+# plt.plot(des_time, des_tau)
+# plt.xlabel("Time (s)")
+# plt.ylabel("Torque (Nm)")
+# plt.title("Torque (Nm) vs Time (s)")
+# plt.legend(['Measured Torque', 'Desired Torque'])
+# plt.draw()
+#plt.savefig(output_folder + '/swingup_tau.pdf')
+# plt.show()
 
 # load results of simulation and compare with real behaviour
 csv_path = "log_data/direct_collocation/trajectory.csv"

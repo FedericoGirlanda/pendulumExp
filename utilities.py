@@ -529,8 +529,8 @@ class LQRController(AbstractController):
         self.A = np.array([[0, 1],
                            [self.g/self.len, -self.b/(self.m*self.len**2.0)]])
         self.B = np.array([[0, 1./(self.m*self.len**2.0)]]).T
-        self.Q = np.diag((10, 1))
-        self.R = np.array([[1]])
+        self.Q = np.diag((200, 0.1)) #np.diag((10, 1))
+        self.R = np.array([[2]]) #np.array([[1]])
 
         self.K, self.S, _ = lqr(self.A, self.B, self.Q, self.R)
 
@@ -573,9 +573,9 @@ class LQRController(AbstractController):
         pos = float(np.squeeze(meas_pos))
         vel = float(np.squeeze(meas_vel))
 
-        #th = pos + np.pi
-        #th = (th + np.pi) % (2*np.pi) - np.pi
-        th = pos - self.goal[0]
+        th = pos + self.goal[0]
+        th = (th + self.goal[0]) % (2*self.goal[0]) - self.goal[0]
+        #th = pos - self.goal[0]
 
         y = np.asarray([th, vel])
 
