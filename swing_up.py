@@ -32,7 +32,7 @@ print("Workspace is set to:", WORK_DIR)
     RoA verification
 """
 name = "RoA verification"
-folder_name = "SUtrials" #"16initManualFail" 
+folder_name = "funnelVerificationTrials" #"16initManualFail" 
 attribute = "motorfft"
 
 

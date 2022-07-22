@@ -3,7 +3,7 @@ from pydrake.all import Variables, MonomialBasis, Solve, MathematicalProgram, Ja
 from pydrake.symbolic import Polynomial as simb_poly
 from pydrake.symbolic import sin, TaylorExpand
 
-def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
+def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t, phi_t, eps):
 
     # Sampled constraints
     t_iplus1 = time[knot]
@@ -37,10 +37,15 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
     fn = [xbar[1], (ubar -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)] # shifted state dynamics
 
     # Lyapunov function and its derivative
-    S_t = controller.tvlqr.S
-    S_i = S_t.value(t_i)
-    S_iplus1 = S_t.value(t_iplus1)
-    Sdot_i = (S_iplus1-S_i)/dt
+    S0_t = controller.tvlqr.S
+    S0_i = S0_t.value(t_i)
+    S0_iplus1 = S0_t.value(t_iplus1)
+    S0dot_i = (S0_iplus1-S0_i)/dt
+    phi_i = np.array([[phi_t[knot-1][0], phi_t[knot-1][1]],[phi_t[knot-1][1], phi_t[knot-1][2]]])
+    phi_iplus1 = np.array([[phi_t[knot][0], phi_t[knot][1]],[phi_t[knot][1], phi_t[knot][2]]])
+    phidot_i = (phi_iplus1-phi_i)/dt
+    S_i = S0_i + phi_i
+    Sdot_i = S0dot_i + phidot_i
     V_i = (xbar).dot(S_i.dot(xbar))
     Vdot_i_x = V_i.Jacobian(xbar).dot(fn)
     Vdot_i_t = xbar.dot(Sdot_i.dot(xbar))
@@ -70,15 +75,18 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
     mu_ij = h.ToExpression()
 
     # Optimization constraints 
-    constr_minus = - (Vdot_minus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) 
-    constr = - (Vdot_i) + rho_dot_i + mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) 
-    constr_plus = - (Vdot_plus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) 
+    constr_minus = eps - (Vdot_minus) +rho_dot_i - mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) 
+    constr = eps - (Vdot_i) + rho_dot_i - mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) 
+    constr_plus = eps - (Vdot_plus) +rho_dot_i - mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) 
 
     for c in [constr_minus, constr, constr_plus]:
         prog.AddSosConstraint(c)
 
     # Solve the problem
     result = Solve(prog)
+    # solver = MosekSolver()
+    # result = solver.Solve(prog)
+
     rho_opt = result.GetSolution(rho_i)
 
     # failing checker
@@ -88,7 +96,7 @@ def TVrhoSearch(pendulum, controller, knot, time, h_map, rho_t):
 
     return fail, rho_opt
 
-def TVmultSearch(pendulum, controller, knot, time, rho_t):
+def TVmultSearch(pendulum, controller, knot, time, rho_t, phi_t):
 
     # Sampled constraints
     t_iplus1 = time[knot]
@@ -121,10 +129,15 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     fn = [xbar[1], (ubar -b*xbar[1]-(Tsin_x-np.sin(x0[0]))*m*g*l)/(m*l*l)] # shifted state dynamics
 
     # Lyapunov function and its derivative
-    S_t = controller.tvlqr.S
-    S_i = S_t.value(t_i)
-    S_iplus1 = S_t.value(t_iplus1)
-    Sdot_i = (S_iplus1-S_i)/dt
+    S0_t = controller.tvlqr.S
+    S0_i = S0_t.value(t_i)
+    S0_iplus1 = S0_t.value(t_iplus1)
+    S0dot_i = (S0_iplus1-S0_i)/dt
+    phi_i = np.array([[phi_t[knot-1][0], phi_t[knot-1][1]],[phi_t[knot-1][1], phi_t[knot-1][2]]])
+    phi_iplus1 = np.array([[phi_t[knot][0], phi_t[knot][1]],[phi_t[knot][1], phi_t[knot][2]]])
+    phidot_i = (phi_iplus1-phi_i)/dt
+    S_i = S0_i + phi_i
+    Sdot_i = S0dot_i + phidot_i
     V_i = (xbar).dot(S_i.dot(xbar))
     Vdot_i_x = V_i.Jacobian(xbar).dot(fn)
     Vdot_i_t = xbar.dot(Sdot_i.dot(xbar))
@@ -139,7 +152,9 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     Vdot_plus = Vdot_i_t + V_i.Jacobian(xbar).dot(fn_plus)
 
     # Multipliers definition
-    h = prog.NewSosPolynomial(Variables(xbar), 4)[0]
+    # h = prog.NewSosPolynomial(Variables(xbar), 4)[0]
+    # mu_ij = h.ToExpression()
+    h = prog.NewFreePolynomial(Variables(xbar), 4)
     mu_ij = h.ToExpression()
     lambda_1 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
     lambda_2 = prog.NewSosPolynomial(Variables(xbar), 4)[0].ToExpression()
@@ -152,27 +167,27 @@ def TVmultSearch(pendulum, controller, knot, time, rho_t):
     rho_dot_i = (rho_iplus1 - rho_i)/dt
 
     # Optimization constraints 
-    constr_minus = - (Vdot_minus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) + gamma
-    constr = - (Vdot_i) + rho_dot_i + mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) + gamma
-    constr_plus = - (Vdot_plus) +rho_dot_i + mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) + gamma
+    constr_minus = - (Vdot_minus) +rho_dot_i - mu_ij*(V_i - rho_i) + lambda_1*(-u_minus+ubar) #+ gamma
+    constr = - (Vdot_i) + rho_dot_i - mu_ij*(V_i - rho_i) + lambda_2*(u_minus-ubar) + lambda_3*(-u_plus+ubar) + gamma
+    constr_plus = - (Vdot_plus) +rho_dot_i - mu_ij*(V_i - rho_i) + lambda_4*(u_plus-ubar) #+ gamma
 
     for c in [constr_minus, constr, constr_plus]:
         prog.AddSosConstraint(c)
 
     # Solve the problem and store the polynomials
     result_mult = Solve(prog)  
+    # solver = MosekSolver()
+    # result_mult = solver.Solve(prog)
 
     h_map = result_mult.GetSolution(h).monomial_to_coefficient_map()
     eps = result_mult.get_optimal_cost()
 
     # failing checker
     fail = not result_mult.is_success()
-    if fail:
-        print(f"mult step Error, decreasing rho to make it feasible...")  
 
     # go ahead if right enough, step back?
-    if eps < np.inf:
-        if (round(eps*10e-4) == 0):
-            fail = False
+    # if eps < np.inf:
+    #     if (round(eps*10e4) == 0):
+    #         fail = False
 
-    return fail, h_map
+    return fail, h_map, eps
