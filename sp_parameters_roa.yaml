@@ -18,6 +18,6 @@ inertia: 0.14322 #0.139625 #None
 damping: 0.15 #0.35 
 coulomb_fric: 0.0
 dt: 0.005 #0.01
-runtime: 10
+runtime: 8
 
 

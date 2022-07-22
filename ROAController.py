@@ -7,7 +7,7 @@ class RoAController(AbstractController):
 
         # Adding a random disturbance
         self.noisy = disturbance
-        self.noisyTime = 2.2
+        self.noisyTime = 1.5
         self.noiseDuration = 0.2
         self.noiseAmplitude = noiseAmplitude
 
@@ -55,7 +55,8 @@ class RoAController(AbstractController):
             des_pos, des_vel, u = self.x_i[0], self.x_i[1], 0
             print(f"manual action...") # at time {meas_time} with input u = {meas_tau} and state x = [{meas_pos, meas_vel}]")
 
-            cond1 = (np.round(meas_pos,1) == np.round(self.x_i[0],1)) and (np.round(meas_vel,1) == np.round(self.x_i[1],1)) 
+            #cond1 = (np.round(meas_pos,1) == np.round(self.x_i[0],1)) and (np.round(meas_vel,1) == np.round(self.x_i[1],1)) 
+            cond1 = (round(meas_time) == 2)
             if cond1:
                 self.active_controller = "tvlqr"
                 self.tvlqrTime = meas_time
